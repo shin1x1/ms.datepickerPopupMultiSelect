@@ -29,8 +29,27 @@
     angular.module('ms.datepickerPopupMultiSelect', ['ui.bootstrap'])
         .config(['$provide', '$injector', function ($provide, $injector) {
 
-            // extending datepicker (access to attributes and app scope through $parent)
-            var datepickerDelegate = function ($delegate) {
+            var dateIndexOf = function (dates, needle) {
+                for (var i = 0, max = dates.length ; i < max ; i++) {
+                    var date = dates[i];
+                    
+                    if (date.getFullYear() !== needle.getFullYear()) {
+                        continue;
+                    }
+                    if (date.getMonth() !== needle.getMonth()) {
+                        continue;
+                    }
+                    if (date.getDate() !== needle.getDate()) {
+                        continue;
+                    }
+
+                    return i;
+                }
+
+                return -1;
+            };
+
+            var datepickerDelegate = function ($delegate, $parse) {
                 var directive = $delegate[0];
 
                 // Override compile
@@ -42,25 +61,33 @@
 
                         if (!angular.isDefined(attrs.multiSelect)) return;
 
-                        scope.selectedDates = [];
-
-                        scope.$parent.$watchCollection(attrs.multiSelect, function (newVal) {
-                            scope.selectedDates = newVal || [];
-                        });
+                        var model = $parse(attrs.multiSelect);
+                        scope.getSelectedDates = function () {
+                            return model(scope.$parent) || [];
+                        };
+                        scope.setSelectedDates = function (dates) {
+                            return model.assign(dates);
+                        };
 
                         scope.$on('select_date', function () {
                             var newVal = scope.$parent.$eval(attrs.ngModel);
                             if (!newVal)
                                 return;
 
-                            var dateVal = newVal.setHours(0, 0, 0, 0),
-                                selectedDates = scope.selectedDates;
+                            newVal.setHours(0, 0, 0, 0);
 
-                            if (selectedDates.indexOf(dateVal) < 0) {
-                                selectedDates.push(dateVal);
+                            var selectedDates = scope.getSelectedDates();
+
+                            var index = dateIndexOf(selectedDates, newVal);
+
+                            if (index >= 0) {
+                                selectedDates.splice(index, 1);
                             } else {
-                                selectedDates.splice(selectedDates.indexOf(dateVal), 1);
+                                selectedDates.push(newVal);
                             }
+
+                            scope.setSelectedDates(selectedDates);
+                            scope.$broadcast('update_dates');
                         });
                     }
                 };
@@ -69,10 +96,9 @@
             };
 
             if ($injector.has('uibDatepickerPopupDirective')) {
-                $provide.decorator('uibDatepickerPopupDirective', ['$delegate', datepickerDelegate]);
+                $provide.decorator('uibDatepickerPopupDirective', ['$delegate', '$parse', datepickerDelegate]);
             }
 
-            // extending daypicker (access to day and datepicker scope through $parent)
             var daypickerDelegate = function ($delegate) {
                 var directive = $delegate[0];
 
@@ -83,24 +109,37 @@
                     return function (scope, element, attrs, ctrls) {
                         link.apply(this, arguments);
 
-                        if (!angular.isDefined(scope.$parent.$parent.selectedDates)) return;
+                        if (!angular.isDefined(scope.$parent.$parent.getSelectedDates)) return;
 
-                        scope.$parent.$parent.$watchCollection('selectedDates', update);
-
+                        // emit 'select_date' -> broadcast 'update_dates'
                         var select_origin = scope.select;
                         scope.select = function (date) {
                             select_origin(date);
                             scope.$emit('select_date');
-                            update();
                         };
+                        scope.$on('update_dates', update);
+
+                        // fire when init rendering and moving to each months
+                        var ctrl = angular.isArray(ctrls) ? ctrls[0] : ctrls;
+
+                        scope.$watch(function () {
+                            return ctrl.activeDate.getTime();
+                        }, update);
 
                         function update() {
+                            if (!scope.$parent || !scope.$parent.$parent) {
+                                return;
+                            }
+
+                            var selectedDates = scope.$parent.$parent.getSelectedDates();
+                            if (!selectedDates) {
+                                return;
+                            }
+
                             angular.forEach(scope.rows, function (row) {
-                                if (!scope.$parent) {
-                                    return;
-                                }
                                 angular.forEach(row, function (day) {
-                                    day.selected = scope.$parent.$parent.selectedDates.indexOf(day.date.setHours(0, 0, 0, 0)) > -1
+                                    var index = dateIndexOf(selectedDates, day.date);
+                                    day.selected = index >= 0;
                                 });
                             });
                         }
