@@ -63,7 +63,7 @@
 
                         var model = $parse(attrs.multiSelect);
                         scope.getSelectedDates = function () {
-                            return model(scope.$parent) || [];
+                            return model(scope.$parent);
                         };
                         scope.setSelectedDates = function (dates) {
                             return model.assign(dates);
