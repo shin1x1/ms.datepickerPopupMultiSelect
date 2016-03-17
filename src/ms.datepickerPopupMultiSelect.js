@@ -32,7 +32,7 @@
             var dateIndexOf = function (dates, needle) {
                 for (var i = 0, max = dates.length ; i < max ; i++) {
                     var date = dates[i];
-                    
+
                     if (date.getFullYear() !== needle.getFullYear()) {
                         continue;
                     }
@@ -69,15 +69,29 @@
                             return model.assign(dates);
                         };
 
+                        // override for clearing dates
+                        var select_origin = scope.select;
+                        scope.select = function (date) {
+                            select_origin(date);
+                            if (date) {
+                                return;
+                            }
+
+                            // clear all dates in multiSelectModel
+                            var selectedDates = scope.getSelectedDates();
+                            selectedDates.splice(0, selectedDates.length);
+                            scope.setSelectedDates(selectedDates);
+                        };
+
                         scope.$on('select_date', function () {
                             var newVal = scope.$parent.$eval(attrs.ngModel);
-                            if (!newVal)
+                            if (!newVal) {
                                 return;
+                            }
 
                             newVal.setHours(0, 0, 0, 0);
 
                             var selectedDates = scope.getSelectedDates();
-
                             var index = dateIndexOf(selectedDates, newVal);
 
                             if (index >= 0) {
@@ -111,6 +125,7 @@
 
                         if (!angular.isDefined(scope.$parent.$parent.getSelectedDates)) return;
 
+                        // override for emitting a event chain
                         // emit 'select_date' -> broadcast 'update_dates'
                         var select_origin = scope.select;
                         scope.select = function (date) {
