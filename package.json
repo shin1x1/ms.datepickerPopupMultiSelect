@@ -1,0 +1,26 @@
+{
+  "name": "ms.datepicker-popup-multi-select",
+  "version": "0.0.3",
+  "description": "",
+  "main": "src/ms.datepickerPopupMultiSelect.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shin1x1/ms.datepickerPopupMultiSelect.git"
+  },
+  "keywords": [
+    "angular",
+    "bootstrap",
+    "ui.bootstrap",
+    "datepicker",
+    "multiple"
+  ],
+  "author": "Masashi Shinbara <shin1x1@gmail.com> (https://github.com/shin1x1)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/shin1x1/ms.datepickerPopupMultiSelect/issues"
+  },
+  "homepage": "https://github.com/shin1x1/ms.datepickerPopupMultiSelect"
+}
