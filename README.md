@@ -15,3 +15,6 @@ This directive will not work properly with UI Bootstrap 1.x.
 $ npm i ms.datepicker-popup-multi-select
 ```
 
+## Demo
+
+https://jsfiddle.net/shin1x1/ca23pmdz/
